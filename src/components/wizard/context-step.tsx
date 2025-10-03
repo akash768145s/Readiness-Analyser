@@ -41,7 +41,7 @@ export function ContextStep({ onNext }: ContextStepProps) {
                         id="country"
                         value={country}
                         onChange={(e) => setCountry(e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-gray-900 hover:border-gray-300"
                     >
                         <option value="">Select your country</option>
                         <option value="AE">🇦🇪 United Arab Emirates</option>
@@ -60,7 +60,7 @@ export function ContextStep({ onNext }: ContextStepProps) {
                         id="erp"
                         value={erp}
                         onChange={(e) => setErp(e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white text-gray-900 hover:border-gray-300"
                     >
                         <option value="">Select your ERP system</option>
                         <option value="SAP">SAP</option>
