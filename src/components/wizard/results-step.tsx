@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataPreview } from '@/components/data-preview';
-import { Download, Share2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Download, Share2, CheckCircle, XCircle } from 'lucide-react';
+import { GenericRow } from '@/lib/rule-validator';
+import { Questionnaire } from '@/lib/scoring';
+import type { Report } from '@/app/report/[reportId]/page';
 
 interface ResultsStepProps {
     onBack: () => void;
-    onAnalyze: (questionnaire: any) => void;
-    previewData: any[];
-    analysisResult?: any;
+    onAnalyze: (questionnaire: Questionnaire) => void;
+    previewData: GenericRow[];
+    analysisResult?: Report;
     analyzing: boolean;
 }
 
@@ -197,7 +200,7 @@ export function ResultsStep({
                                     Close Match ({analysisResult.coverage.close.length})
                                 </h4>
                                 <div className="space-y-1">
-                                    {analysisResult.coverage.close.slice(0, 5).map((item: any) => (
+                                    {analysisResult.coverage.close.slice(0, 5).map((item) => (
                                         <Badge key={item.target} className="bg-yellow-100 text-yellow-800 text-xs">
                                             {item.target} ({Math.round(item.confidence * 100)}%)
                                         </Badge>
@@ -233,7 +236,7 @@ export function ResultsStep({
                     <div className="bg-white border rounded-lg p-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Rule Validation Results</h3>
                         <div className="space-y-3">
-                            {analysisResult.ruleFindings.map((finding: any) => (
+                            {analysisResult.ruleFindings.map((finding) => (
                                 <div key={finding.rule} className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center">
                                         {finding.ok ? (

@@ -1,9 +1,10 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { GenericRow } from '@/lib/rule-validator';
 
 interface DataPreviewProps {
-    data: any[];
+    data: GenericRow[];
     loading?: boolean;
 }
 
@@ -52,7 +53,7 @@ export function DataPreview({ data, loading }: DataPreviewProps) {
 
     const columns = Array.from(allKeys).slice(0, 8); // Limit columns for display
 
-    const inferType = (value: any): string => {
+    const inferType = (value: unknown): string => {
         if (value === null || value === undefined || value === '') return 'empty';
         if (typeof value === 'number') return 'number';
         if (typeof value === 'boolean') return 'boolean';
@@ -74,12 +75,13 @@ export function DataPreview({ data, loading }: DataPreviewProps) {
         }
     };
 
-    const getValue = (row: any, column: string): any => {
+    const getValue = (row: GenericRow, column: string): unknown => {
         if (column.startsWith('lines[].')) {
             const lineField = column.replace('lines[].', '');
-            return row.lines?.[0]?.[lineField] || '';
+            const firstLine = Array.isArray(row.lines) ? (row.lines[0] as unknown as GenericRow) : undefined;
+            return firstLine ? firstLine[lineField as keyof typeof firstLine] : '';
         }
-        return row[column] || '';
+        return row[column as keyof typeof row] || '';
     };
 
     const displayRows = data.slice(0, 20);
