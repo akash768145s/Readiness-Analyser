@@ -1,0 +1,37 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Upload {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  country    String?
+  erp        String?
+  rowsParsed Int      @default(0)
+  piiMasked  Boolean  @default(false)
+  rawRef     String?  // File path or reference
+  reports    Report[]
+
+  @@map("uploads")
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  uploadId    String
+  createdAt   DateTime @default(now())
+  scoresOverall Int    @default(0)
+  reportJson  String   // JSON blob containing the full report
+  expiresAt   DateTime?
+  
+  upload      Upload   @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}

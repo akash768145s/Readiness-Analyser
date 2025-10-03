@@ -1,0 +1,188 @@
+{
+  "info": {
+    "name": "E-Invoicing Readiness Analyzer",
+    "description": "API collection for testing the E-Invoicing Readiness & Gap Analyzer",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "uploadId",
+      "value": "",
+      "description": "Upload ID from upload response"
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "description": "Report ID from analyze response"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check API health and database status"
+      },
+      "response": []
+    },
+    {
+      "name": "Upload Clean Sample (JSON)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('uploadId', response.uploadId);",
+              "    console.log('Upload ID:', response.uploadId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"[{\\\"inv_id\\\":\\\"INV-1001\\\",\\\"date\\\":\\\"2025-01-15\\\",\\\"currency\\\":\\\"AED\\\",\\\"seller_name\\\":\\\"Alpha LLC\\\",\\\"seller_trn\\\":\\\"100200300\\\",\\\"seller_country\\\":\\\"AE\\\",\\\"seller_city\\\":\\\"Dubai\\\",\\\"buyer_name\\\":\\\"Beta FZ-LLC\\\",\\\"buyer_trn\\\":\\\"700800900\\\",\\\"buyer_country\\\":\\\"AE\\\",\\\"buyer_city\\\":\\\"Abu Dhabi\\\",\\\"total_excl_vat\\\":1000,\\\"vat_amount\\\":50,\\\"total_incl_vat\\\":1050,\\\"lines\\\":[{\\\"sku\\\":\\\"A1\\\",\\\"description\\\":\\\"Widget A\\\",\\\"qty\\\":5,\\\"unit_price\\\":100,\\\"line_total\\\":500},{\\\"sku\\\":\\\"B2\\\",\\\"description\\\":\\\"Widget B\\\",\\\"qty\\\":5,\\\"unit_price\\\":100,\\\"line_total\\\":500}]}]\",\n  \"country\": \"AE\",\n  \"erp\": \"SAP\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/upload",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "upload"]
+        },
+        "description": "Upload clean sample data (should pass validation)"
+      },
+      "response": []
+    },
+    {
+      "name": "Upload Flawed Sample (CSV)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('uploadId', response.uploadId);",
+              "    console.log('Upload ID:', response.uploadId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"inv_no,issued_on,curr,sellerName,sellerTax,buyerName,buyerTax,totalNet,vat,grandTotal,lineSku,lineQty,linePrice,lineTotal,buyerCountry\\nINV-2001,2025/01/10,EURO,Omega LLC,ABC123,Theta LLC,900900900,100,12,112,X1,2,50,100,AE\\nINV-2002,2025-01-11,AED,Sigma LLC,555666777,Zeta Co,888999000,300,15,315,X2,3,50,100,AE\\nINV-2003,2025-13-12,MYR,Omicron Ltd,333444555,Lambda Ltd,222333444,120,6,126,X3,1,120,120,MY\\nINV-2004,2025-01-12,SAR,Nu LLC,999888777,Mu Co,777666555,100,5,104,X4,2,50,99,SA\",\n  \"country\": \"AE\",\n  \"erp\": \"Custom\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/upload",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "upload"]
+        },
+        "description": "Upload flawed sample data (contains validation errors)"
+      },
+      "response": []
+    },
+    {
+      "name": "Analyze Data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('reportId', response.reportId);",
+              "    console.log('Report ID:', response.reportId);",
+              "    console.log('Overall Score:', response.scores.overall + '%');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"uploadId\": \"{{uploadId}}\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": false\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "analyze"]
+        },
+        "description": "Analyze uploaded data with questionnaire responses"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Report",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/report/{{reportId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "report", "{{reportId}}"]
+        },
+        "description": "Retrieve analysis report by ID"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Recent Reports",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/reports?limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reports"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Number of recent reports to return"
+            }
+          ]
+        },
+        "description": "Get list of recent reports"
+      },
+      "response": []
+    }
+  ]
+}
