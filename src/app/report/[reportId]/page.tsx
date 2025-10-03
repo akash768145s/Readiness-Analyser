@@ -5,37 +5,52 @@ import { useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Download, CheckCircle, XCircle } from 'lucide-react';
+import type { Scores } from '@/lib/scoring';
+import type { CoverageResult, FieldMapping } from '@/lib/field-mapper';
+import type { RuleFinding } from '@/lib/rule-validator';
+
+interface ReportMeta {
+    rowsParsed: number;
+    linesTotal: number;
+    country: string;
+    erp: string;
+}
+
+interface Report {
+    reportId: string;
+    scores: Scores;
+    coverage: CoverageResult;
+    ruleFindings: RuleFinding[];
+    gaps?: string[];
+    meta: ReportMeta;
+}
 
 export default function ReportPage() {
     const params = useParams();
     const reportId = params.reportId as string;
-    const [report, setReport] = useState<any>(null);
+    const [report, setReport] = useState<Report | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (reportId) {
-            fetchReport();
-        }
-    }, [reportId]);
-
-    const fetchReport = async () => {
-        try {
-            const response = await fetch(`/api/report/${reportId}`);
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to fetch report');
+        if (!reportId) return;
+        const run = async () => {
+            try {
+                const response = await fetch(`/api/report/${reportId}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch report');
+                }
+                const data = await response.json() as Report;
+                setReport(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to load report');
+            } finally {
+                setLoading(false);
             }
-
-            const data = await response.json();
-            setReport(data);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load report');
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
+        run();
+    }, [reportId]);
 
     const handleDownload = () => {
         if (!report) return;
@@ -165,7 +180,7 @@ export default function ReportPage() {
                                 ⚠️ Close Matches ({report.coverage.close.length})
                             </h3>
                             <div className="space-y-2">
-                                {report.coverage.close.map((item: any) => (
+                                {report.coverage.close.map((item: FieldMapping) => (
                                     <div key={item.target} className="text-sm">
                                         <Badge className="bg-yellow-100 text-yellow-800 block text-center mb-1">
                                             {item.target}
@@ -196,7 +211,7 @@ export default function ReportPage() {
                 <div className="bg-white border rounded-lg p-6 mb-8">
                     <h2 className="text-xl font-bold text-gray-900 mb-6">Rule Validation Results</h2>
                     <div className="space-y-4">
-                        {report.ruleFindings.map((finding: any) => (
+                        {report.ruleFindings.map((finding: RuleFinding) => (
                             <div key={finding.rule} className="flex items-start justify-between p-4 border rounded-lg">
                                 <div className="flex items-start">
                                     {finding.ok ? (
