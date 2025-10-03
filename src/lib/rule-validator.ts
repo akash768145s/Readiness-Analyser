@@ -7,7 +7,9 @@ export interface RuleFinding {
     value?: string;
 }
 
-export function validateRules(data: any[]): RuleFinding[] {
+export type GenericRow = Record<string, unknown>;
+
+export function validateRules(data: GenericRow[]): RuleFinding[] {
     const findings: RuleFinding[] = [];
 
     // Rule 1: TOTALS_BALANCE - total_excl_vat + vat_amount == total_incl_vat (±0.01)
@@ -28,7 +30,7 @@ export function validateRules(data: any[]): RuleFinding[] {
     return findings;
 }
 
-function validateTotalsBalance(data: any[]): RuleFinding {
+function validateTotalsBalance(data: GenericRow[]): RuleFinding {
     let hasError = false;
 
     for (const row of data) {
@@ -51,10 +53,13 @@ function validateTotalsBalance(data: any[]): RuleFinding {
     };
 }
 
-function validateLineMath(data: any[]): RuleFinding {
+function validateLineMath(data: GenericRow[]): RuleFinding {
     for (let i = 0; i < data.length; i++) {
         const row = data[i];
-        const lines = row.lines || [row]; // Handle both nested and flat structures
+        const potentialLines = row['lines'];
+        const lines: GenericRow[] = Array.isArray(potentialLines)
+            ? (potentialLines.filter((l): l is GenericRow => typeof l === 'object' && l !== null))
+            : [row]; // Handle both nested and flat structures
 
         for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
             const line = lines[lineIdx];
@@ -83,7 +88,7 @@ function validateLineMath(data: any[]): RuleFinding {
     };
 }
 
-function validateDateISO(data: any[]): RuleFinding {
+function validateDateISO(data: GenericRow[]): RuleFinding {
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
     for (const row of data) {
@@ -104,7 +109,7 @@ function validateDateISO(data: any[]): RuleFinding {
     };
 }
 
-function validateCurrencyAllowed(data: any[]): RuleFinding {
+function validateCurrencyAllowed(data: GenericRow[]): RuleFinding {
     const allowedCurrencies = ['AED', 'SAR', 'MYR', 'USD'];
 
     for (const row of data) {
@@ -125,7 +130,7 @@ function validateCurrencyAllowed(data: any[]): RuleFinding {
     };
 }
 
-function validateTrnPresent(data: any[]): RuleFinding {
+function validateTrnPresent(data: GenericRow[]): RuleFinding {
     for (const row of data) {
         const sellerTrn = getStringValue(row, ['seller_trn', 'sellerTax', 'seller.trn']);
         const buyerTrn = getStringValue(row, ['buyer_trn', 'buyerTax', 'buyer.trn']);
@@ -145,10 +150,11 @@ function validateTrnPresent(data: any[]): RuleFinding {
 }
 
 // Helper function to get numeric value from multiple possible field names
-function getNumericValue(obj: any, fieldNames: string[]): number | null {
+function getNumericValue(obj: GenericRow, fieldNames: string[]): number | null {
     for (const fieldName of fieldNames) {
-        if (obj && obj[fieldName] !== undefined && obj[fieldName] !== null) {
-            const num = Number(obj[fieldName]);
+        const raw = obj && obj[fieldName as keyof typeof obj];
+        if (raw !== undefined && raw !== null) {
+            const num = Number(raw);
             if (!isNaN(num) && isFinite(num)) {
                 return num;
             }
@@ -158,10 +164,11 @@ function getNumericValue(obj: any, fieldNames: string[]): number | null {
 }
 
 // Helper function to get string value from multiple possible field names
-function getStringValue(obj: any, fieldNames: string[]): string | null {
+function getStringValue(obj: GenericRow, fieldNames: string[]): string | null {
     for (const fieldName of fieldNames) {
-        if (obj && obj[fieldName] !== undefined && obj[fieldName] !== null) {
-            return String(obj[fieldName]);
+        const raw = obj && obj[fieldName as keyof typeof obj];
+        if (raw !== undefined && raw !== null) {
+            return String(raw);
         }
     }
     return null;

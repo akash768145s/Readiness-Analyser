@@ -1,5 +1,5 @@
 import { CoverageResult } from './field-mapper';
-import { RuleFinding } from './rule-validator';
+import { RuleFinding, GenericRow } from './rule-validator';
 import { GETS_SCHEMA } from './gets-schema';
 
 export interface Scores {
@@ -17,7 +17,7 @@ export interface Questionnaire {
 }
 
 export function calculateScores(
-    data: any[],
+    data: GenericRow[],
     coverage: CoverageResult,
     ruleFindings: RuleFinding[],
     questionnaire: Questionnaire
@@ -51,7 +51,7 @@ export function calculateScores(
     };
 }
 
-function calculateDataScore(data: any[]): number {
+function calculateDataScore(data: GenericRow[]): number {
     if (!data || data.length === 0) return 0;
 
     let totalFields = 0;
@@ -64,7 +64,7 @@ function calculateDataScore(data: any[]): number {
 
             // Count fields that have valid, non-empty values
             for (const field of fields) {
-                const value = row[field];
+                const value = row[field as keyof typeof row];
                 if (value !== null && value !== undefined && value !== '') {
                     // Additional type validation
                     if (field.includes('date') || field.includes('Date')) {
@@ -89,13 +89,13 @@ function calculateDataScore(data: any[]): number {
 
             // Handle nested lines array
             if (Array.isArray(row.lines)) {
-                for (const line of row.lines) {
+                for (const line of row.lines as unknown as GenericRow[]) {
                     if (typeof line === 'object' && line !== null) {
                         const lineFields = Object.keys(line);
                         totalFields += lineFields.length;
 
                         for (const field of lineFields) {
-                            const value = line[field];
+                            const value = line[field as keyof typeof line];
                             if (value !== null && value !== undefined && value !== '') {
                                 successfulFields++;
                             }
