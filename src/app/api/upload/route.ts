@@ -120,7 +120,7 @@ function parseAsCSV(content: string): Promise<GenericRow[]> {
                 }
                 resolve(results.data);
             },
-            error: (error) => {
+            error: (error: Papa.ParseError) => {
                 reject(new Error(`CSV parsing failed: ${error.message}`));
             }
         });
