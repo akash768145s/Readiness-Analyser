@@ -5,6 +5,8 @@ import { StepIndicator } from '@/components/wizard/step-indicator';
 import { ContextStep } from '@/components/wizard/context-step';
 import { UploadStep } from '@/components/wizard/upload-step';
 import { ResultsStep } from '@/components/wizard/results-step';
+import { GenericRow } from '@/lib/rule-validator';
+import { Questionnaire } from '@/lib/scoring';
 
 const STEPS = ['Context', 'Upload', 'Results'];
 
@@ -12,7 +14,7 @@ export default function Home() {
   const [currentStep, setCurrentStep] = useState(0);
   const [contextData, setContextData] = useState({ country: '', erp: '' });
   const [uploadId, setUploadId] = useState('');
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<GenericRow[]>([]);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -21,13 +23,13 @@ export default function Home() {
     setCurrentStep(1);
   };
 
-  const handleUploadNext = (uploadId: string, preview: any[]) => {
+  const handleUploadNext = (uploadId: string, preview: GenericRow[]) => {
     setUploadId(uploadId);
     setPreviewData(preview);
     setCurrentStep(2);
   };
 
-  const handleAnalyze = async (questionnaire: any) => {
+  const handleAnalyze = async (questionnaire: Questionnaire) => {
     setAnalyzing(true);
 
     try {
