@@ -3,9 +3,10 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, AlertCircle } from 'lucide-react';
+import { GenericRow } from '@/lib/rule-validator';
 
 interface UploadStepProps {
-    onNext: (uploadId: string, previewData: any[]) => void;
+    onNext: (uploadId: string, previewData: GenericRow[]) => void;
     onBack: () => void;
     contextData: { country: string; erp: string };
 }
@@ -14,7 +15,7 @@ export function UploadStep({ onNext, onBack, contextData }: UploadStepProps) {
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
-    const [previewData, setPreviewData] = useState<any[]>([]);
+    // We compute preview data on the fly and pass it upward; no local state needed
     const [uploadMethod, setUploadMethod] = useState<'file' | 'paste'>('file');
     const [pasteText, setPasteText] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +69,6 @@ export function UploadStep({ onNext, onBack, contextData }: UploadStepProps) {
             // Read file content for preview
             const text = await file.text();
             const preview = await parsePreviewData(text, file.name);
-            setPreviewData(preview);
 
             onNext(uploadId, preview);
         } catch (err) {
@@ -109,7 +109,6 @@ export function UploadStep({ onNext, onBack, contextData }: UploadStepProps) {
 
             // Parse preview data
             const preview = await parsePreviewData(pasteText);
-            setPreviewData(preview);
 
             onNext(uploadId, preview);
         } catch (err) {
@@ -119,7 +118,7 @@ export function UploadStep({ onNext, onBack, contextData }: UploadStepProps) {
         }
     };
 
-    const parsePreviewData = async (content: string, filename?: string): Promise<any[]> => {
+    const parsePreviewData = async (content: string, filename?: string): Promise<GenericRow[]> => {
         const trimmedContent = content.trim();
 
         // First try to detect JSON by structure
@@ -135,8 +134,8 @@ export function UploadStep({ onNext, onBack, contextData }: UploadStepProps) {
         if (isJSON || (!isCSV && !filename?.endsWith('.csv'))) {
             // Parse as JSON first
             try {
-                const parsed = JSON.parse(content);
-                const data = Array.isArray(parsed) ? parsed : [parsed];
+                const parsedUnknown = JSON.parse(content) as unknown;
+                const data = Array.isArray(parsedUnknown) ? (parsedUnknown as GenericRow[]) : [parsedUnknown as Record<string, unknown>];
                 return data.slice(0, 20);
             } catch {
                 // If JSON parsing fails and we have CSV-like structure, try CSV
@@ -151,14 +150,14 @@ export function UploadStep({ onNext, onBack, contextData }: UploadStepProps) {
         }
     };
 
-    const parseAsCSVPreview = (content: string): any[] => {
+    const parseAsCSVPreview = (content: string): GenericRow[] => {
         const lines = content.trim().split('\n');
         if (lines.length < 2) return [];
 
         const headers = lines[0].split(',').map(h => h.trim());
         const data = lines.slice(1, 21).map(line => {
             const values = line.split(',');
-            const row: any = {};
+            const row: GenericRow = {};
             headers.forEach((header, index) => {
                 const value = values[index]?.trim() || '';
                 // Try to convert numbers

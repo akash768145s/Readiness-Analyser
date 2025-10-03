@@ -1,4 +1,5 @@
-import { GETS_SCHEMA, GETSField } from './gets-schema';
+import { GETS_SCHEMA } from './gets-schema';
+import { GenericRow } from './rule-validator';
 
 export interface FieldMapping {
     target: string;
@@ -54,14 +55,14 @@ function areTypesCompatible(getsType: string, inferredType: string): boolean {
 }
 
 // Infer type from sample values
-function inferFieldType(values: any[]): string {
+function inferFieldType(values: unknown[]): string {
     const nonNullValues = values.filter(v => v != null && v !== '');
     if (nonNullValues.length === 0) return 'string';
 
     const sample = nonNullValues.slice(0, 10); // Check first 10 non-null values
 
     // Check if all are numbers
-    if (sample.every(v => !isNaN(Number(v)) && isFinite(Number(v)))) {
+    if (sample.every(v => !isNaN(Number(v as number)) && isFinite(Number(v as number)))) {
         return 'number';
     }
 
@@ -74,7 +75,7 @@ function inferFieldType(values: any[]): string {
     return 'string';
 }
 
-export function mapFields(data: any[]): CoverageResult {
+export function mapFields(data: GenericRow[]): CoverageResult {
     if (!data || data.length === 0) {
         return {
             matched: [],
@@ -92,7 +93,7 @@ export function mapFields(data: any[]): CoverageResult {
 
             // Handle nested lines array
             if (Array.isArray(row.lines)) {
-                row.lines.forEach((line: any) => {
+                (row.lines as unknown as GenericRow[]).forEach((line) => {
                     if (typeof line === 'object' && line !== null) {
                         Object.keys(line).forEach(key => dataFields.add(`lines[].${key}`));
                     }
@@ -130,9 +131,10 @@ export function mapFields(data: any[]): CoverageResult {
                 const sampleValues = data.slice(0, 10).map(row => {
                     if (dataField.startsWith('lines[].')) {
                         const lineField = dataField.replace('lines[].', '');
-                        return row.lines?.[0]?.[lineField];
+                        const firstLine = Array.isArray(row.lines) ? (row.lines[0] as unknown as GenericRow) : undefined;
+                        return firstLine ? firstLine[lineField as keyof typeof firstLine] : undefined;
                     }
-                    return row[dataField];
+                    return row[dataField as keyof typeof row];
                 });
 
                 const inferredType = inferFieldType(sampleValues);
