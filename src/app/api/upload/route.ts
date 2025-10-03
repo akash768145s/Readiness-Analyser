@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import Papa from 'papaparse';
+import { GenericRow } from '@/lib/rule-validator';
 
 export async function POST(request: NextRequest) {
     try {
         const contentType = request.headers.get('content-type');
 
-        let data: any[] = [];
+        let data: GenericRow[] = [];
         let country = '';
         let erp = '';
 
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-async function parseFileContent(content: string, filename?: string): Promise<any[]> {
+async function parseFileContent(content: string, filename?: string): Promise<GenericRow[]> {
     const trimmedContent = content.trim();
 
     // First try to detect JSON by structure
@@ -84,9 +85,9 @@ async function parseFileContent(content: string, filename?: string): Promise<any
     if (isJSON || (!isCSV && !filename?.endsWith('.csv'))) {
         // Parse as JSON first
         try {
-            const parsed = JSON.parse(content);
-            return Array.isArray(parsed) ? parsed : [parsed];
-        } catch (error) {
+            const parsedUnknown = JSON.parse(content) as unknown;
+            return Array.isArray(parsedUnknown) ? (parsedUnknown as GenericRow[]) : [parsedUnknown as Record<string, unknown>];
+        } catch {
             // If JSON parsing fails and we have a CSV-like structure, try CSV
             if (trimmedContent.includes(',') && trimmedContent.includes('\n')) {
                 console.log('JSON parsing failed, trying CSV...');
@@ -100,7 +101,7 @@ async function parseFileContent(content: string, filename?: string): Promise<any
     }
 }
 
-function parseAsCSV(content: string): Promise<any[]> {
+function parseAsCSV(content: string): Promise<GenericRow[]> {
     return new Promise((resolve, reject) => {
         Papa.parse(content, {
             header: true,
@@ -113,11 +114,11 @@ function parseAsCSV(content: string): Promise<any[]> {
                 }
                 return value;
             },
-            complete: (results) => {
+            complete: (results: Papa.ParseResult<GenericRow>) => {
                 if (results.errors.length > 0) {
                     console.warn('CSV parse warnings:', results.errors);
                 }
-                resolve(results.data as any[]);
+                resolve(results.data);
             },
             error: (error) => {
                 reject(new Error(`CSV parsing failed: ${error.message}`));
